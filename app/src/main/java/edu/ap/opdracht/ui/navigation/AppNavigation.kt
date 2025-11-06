@@ -26,6 +26,9 @@ import edu.ap.opdracht.ui.auth.AuthViewModel
 import edu.ap.opdracht.ui.auth.LoginScreen
 import edu.ap.opdracht.ui.auth.RegisterScreen
 import edu.ap.opdracht.ui.settings.SettingsScreen
+import androidx.compose.material.icons.filled.Add
+import androidx.navigation.NavHostController
+import edu.ap.opdracht.ui.location.AddLocationScreen
 
 @Composable
 fun AuthNavigation(
@@ -57,13 +60,14 @@ fun AuthNavigation(
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     data object Home : Screen("home", "Home", Icons.Filled.Home)
+    data object Add : Screen("add", "Toevoegen", Icons.Filled.Add)
     data object Settings : Screen("settings", "Instellingen", Icons.Filled.Settings)
 }
 
 @Composable
 fun AppScreen(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
-    val navItems = listOf(Screen.Home, Screen.Settings)
+    val navItems = listOf(Screen.Home, Screen.Add, Screen.Settings)
 
     Scaffold(
         bottomBar = {
@@ -101,6 +105,18 @@ fun AppScreen(authViewModel: AuthViewModel) {
                 Greeting(
                     name = "Ingelogde Gebruiker",
                     modifier = Modifier.fillMaxSize()
+                )
+            }
+            composable(Screen.Add.route) {
+                AddLocationScreen(
+                    onLocationAdded = {
+                        // Na succesvol toevoegen, ga terug naar Home
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = true
+                            }
+                        }
+                    }
                 )
             }
             composable(Screen.Settings.route) {
