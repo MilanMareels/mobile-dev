@@ -1,4 +1,4 @@
-package edu.ap.opdracht.ui.auth
+package edu.ap.opdracht.ui.auth // Of 'package com.jouwprojectnaam.ui.auth'
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -6,12 +6,12 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseUser
+import edu.ap.opdracht.data.repository.AuthRepository // Zorg dat dit pad klopt!
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Sealed class voor de UI state (Idle, Loading, Error, Success)
 sealed class AuthState {
     data object Idle : AuthState()
     data object Loading : AuthState()
@@ -23,24 +23,20 @@ class AuthViewModel : ViewModel() {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    // --- State voor AC 4 (Session Persistence) ---
-    // Deze flow houdt de HUIDIGE ingelogde gebruiker bij.
+    private val authRepository = AuthRepository()
+
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
-    // --- State voor AC 1, 2, 3 (Login UI) ---
-    // Deze flow houdt de *actie* (login/registratie) bij.
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     init {
-        // Luister naar veranderingen in de Firebase auth state (AC 4)
         auth.addAuthStateListener { firebaseAuth ->
             _currentUser.value = firebaseAuth.currentUser
         }
     }
 
-    // --- Jouw functie voor Ticket 3 ---
     fun loginUser(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
             _authState.value = AuthState.Error("E-mail en wachtwoord mogen niet leeg zijn.")
@@ -48,18 +44,15 @@ class AuthViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            _authState.value = AuthState.Loading // Start het laden
+            _authState.value = AuthState.Loading
 
             auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
-                    // Succes! (AC 2)
-                    // _currentUser wordt automatisch geüpdatet door de listener.
                     _authState.value = AuthState.Success
                 }
                 .addOnFailureListener { exception ->
-                    // Foutmeldingen (AC 3)
                     val errorMessage = when (exception) {
-                        is FirebaseAuthInvalidUserException -> "Er bestaat geen account met dit e-mailadres."
+                        is FirebaseAuthInvalidUserException -> "Geen account gevonden."
                         is FirebaseAuthInvalidCredentialsException -> "Wachtwoord of e-mail ongeldig."
                         else -> "Inloggen mislukt: ${exception.message}"
                     }
@@ -68,15 +61,31 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Functie voor je teamgenoot (Ticket 2)
-    // fun registerUser(email: String, password: String) { ... }
+    fun registerUser(email: String, password: String, displayName: String) {
+        if (email.isBlank() || password.isBlank() || displayName.isBlank()) {
+            _authState.value = AuthState.Error("Alle velden zijn verplicht.")
+            return
+        }
 
-    // Functie om de state te resetten (bv. na navigatie)
-    fun resetAuthState() {
-        _authState.value = AuthState.Idle
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+
+            val result = authRepository.registerUser(email, password, displayName)
+
+            result.onSuccess {
+                _authState.value = AuthState.Success
+            }
+            result.onFailure { exception ->
+                _authState.value = AuthState.Error(exception.message ?: "Onbekende fout")
+            }
+        }
     }
 
     fun logout() {
         auth.signOut()
+    }
+    
+    fun resetAuthState() {
+        _authState.value = AuthState.Idle
     }
 }
