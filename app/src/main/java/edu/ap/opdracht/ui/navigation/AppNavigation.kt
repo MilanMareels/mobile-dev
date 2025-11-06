@@ -14,12 +14,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import edu.ap.opdracht.Greeting
+import edu.ap.opdracht.ui.auth.AuthViewModel
+import edu.ap.opdracht.ui.auth.LoginScreen
 import edu.ap.opdracht.ui.settings.SettingsScreen
 
 // Definieer de schermen en hun routes
@@ -79,6 +82,39 @@ fun AppScreen() {
                     modifier = Modifier.fillMaxSize()
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun AuthNavigation(
+    authViewModel: AuthViewModel = viewModel()
+) {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "login") {
+        // --- Login Scherm (Ticket 3) ---
+        composable("login") {
+            LoginScreen(
+                authViewModel = authViewModel,
+                onGoToRegister = {
+                    navController.navigate("register") // Ga naar registratie
+                }
+            )
+        }
+
+        // --- Registratie Scherm (Ticket 2) ---
+        composable("register") {
+            // Zodra je teamgenoot dit scherm maakt, plaats je het hier:
+            // RegisterScreen(
+            //     authViewModel = authViewModel,
+            //     onGoToLogin = {
+            //         navController.popBackStack() // Ga terug naar login
+            //     }
+            // )
+
+            // Tijdelijke placeholder:
+            LoginScreen(authViewModel = authViewModel, onGoToRegister = { })
         }
     }
 }
