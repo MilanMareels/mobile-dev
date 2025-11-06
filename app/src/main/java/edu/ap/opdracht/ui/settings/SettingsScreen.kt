@@ -19,12 +19,5 @@ fun SettingsScreen(modifier: Modifier = Modifier, authViewModel: AuthViewModel) 
     ) {
         Text(text = "Instellingen Scherm")
         Text(text = "Hier komen alle opties voor de gebruiker.")
-        Button(
-            onClick = {
-                authViewModel.logout()
-            }
-        ) {
-            Text("Uitloggen")
-        }
     }
 }

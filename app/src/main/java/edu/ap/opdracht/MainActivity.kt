@@ -36,7 +36,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// De Greeting functie blijft hier of verhuist naar HomeScreen.kt
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
@@ -49,7 +48,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     MobieldevTheme {
-        // Om de preview van Greeting te laten werken zonder NavController
         Greeting("Android")
     }
 }
