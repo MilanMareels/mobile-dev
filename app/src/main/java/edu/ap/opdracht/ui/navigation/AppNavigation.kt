@@ -32,7 +32,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 }
 
 @Composable
-fun AppScreen() {
+fun AppScreen(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
 
     val navItems = listOf(Screen.Home, Screen.Settings)
@@ -79,7 +79,8 @@ fun AppScreen() {
             // Instellingen Scherm
             composable(Screen.Settings.route) {
                 SettingsScreen(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    authViewModel = authViewModel
                 )
             }
         }

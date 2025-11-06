@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
                 if (currentUser == null) {
                     AuthNavigation(authViewModel)
                 } else {
-                    AppScreen()
+                    AppScreen(authViewModel)
                 }
             }
         }
