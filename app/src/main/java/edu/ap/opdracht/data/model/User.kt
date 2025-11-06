@@ -1,4 +1,7 @@
 package edu.ap.opdracht.data.model
 
-class User {
-}
+data class User (
+    val uid: String = "",
+    val displayName: String? = null,
+    val email: String? = null
+)
