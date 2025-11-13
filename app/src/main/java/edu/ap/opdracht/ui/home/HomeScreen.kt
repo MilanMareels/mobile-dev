@@ -39,17 +39,7 @@ fun HomeScreen(
     val selectedCategory by homeViewModel.selectedCategory.collectAsStateWithLifecycle()
 
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onAddLocationClick() },
-                shape = CircleShape
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Voeg locatie toe"
-                )
-            }
-        }
+
     ) { paddingValues ->
 
         LazyColumn(
