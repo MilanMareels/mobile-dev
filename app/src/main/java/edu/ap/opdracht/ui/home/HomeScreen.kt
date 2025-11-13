@@ -28,10 +28,6 @@ import coil.compose.AsyncImage
 import edu.ap.opdracht.data.model.Location
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-/**
- * Het hoofdscherm, opgebouwd met een Scaffold om de FAB te tonen
- * en een LazyColumn voor alle scrollbare content.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -39,22 +35,11 @@ fun HomeScreen(
     onLocationClick: (locationId: String) -> Unit,
     onAddLocationClick: () -> Unit = {}
 ) {
-    // Haal de states op van de HomeViewModel
     val locations by homeViewModel.locations.collectAsStateWithLifecycle()
     val selectedCategory by homeViewModel.selectedCategory.collectAsStateWithLifecycle()
 
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onAddLocationClick() },
-                shape = CircleShape
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Voeg locatie toe"
-                )
-            }
-        }
+
     ) { paddingValues ->
 
         LazyColumn(
@@ -62,17 +47,14 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Item 1: Welkomstitel
             item {
                 Header()
             }
 
-            // Item 2: Horizontale steden-lijst
             item {
                 CityChips()
             }
 
-            // Item 3: Categorieën sectie (nu functioneel)
             item {
                 FilterChipRow(
                     selectedCategory = selectedCategory,
@@ -82,22 +64,22 @@ fun HomeScreen(
                 )
             }
 
-            // Item 4: "Populaire locaties" header
             item {
                 PopularLocationsHeader()
             }
 
-            // Items 5...N: De dynamische lijst van locaties
+
             items(locations) { location ->
                 LocationItem(
                     location = location,
                     onClick = {
-                        onLocationClick(location.id.toString())
+                        if (!location.id.isNullOrBlank()) {
+                            onLocationClick(location.id)
+                        }
                     }
                 )
             }
 
-            // Voeg extra ruimte toe aan de onderkant
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
@@ -146,7 +128,6 @@ fun FilterChipRow(
     selectedCategory: String,
     onCategorySelected: (String) -> Unit
 ) {
-    // Zorg dat deze categorieën matchen met je data
     val categories = listOf("Alles", "Horeca", "Hotel", "Bezienswaardigheid", "Overig")
 
     Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {

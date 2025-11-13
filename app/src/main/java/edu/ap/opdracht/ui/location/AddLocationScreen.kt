@@ -65,7 +65,6 @@ fun AddLocationScreen(
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        // De gebruiker heeft een foto gekozen (of niet)
         imageUri = uri
     }
 
@@ -73,7 +72,6 @@ fun AddLocationScreen(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Permissie gekregen, start de galerij-kiezer
             galleryLauncher.launch("image/*")
         } else {
             Toast.makeText(context, "Galerij permissie geweigerd", Toast.LENGTH_SHORT).show()
@@ -83,11 +81,9 @@ fun AddLocationScreen(
     fun openGallery() {
         when (ContextCompat.checkSelfPermission(context, galleryPermission)) {
             PackageManager.PERMISSION_GRANTED -> {
-                // Permissie is al verleend, open galerij
                 galleryLauncher.launch("image/*")
             }
             else -> {
-                // Vraag permissie aan
                 galleryPermissionLauncher.launch(galleryPermission)
             }
         }
@@ -96,14 +92,12 @@ fun AddLocationScreen(
     fun fetchLocation() {
         when (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)) {
             PackageManager.PERMISSION_GRANTED -> {
-                // Permissie is al verleend
                 locationError = null
                 getCurrentLocation(context) { geoPoint ->
                     currentGeoPoint = geoPoint
                 }
             }
             else -> {
-                // Vraag permissie aan
                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }
@@ -118,7 +112,7 @@ fun AddLocationScreen(
             is AddLocationState.Success -> {
                 Toast.makeText(context, "Locatie opgeslagen!", Toast.LENGTH_SHORT).show()
                 viewModel.resetState()
-                onLocationAdded() // Navigeer terug
+                onLocationAdded()
             }
             is AddLocationState.Error -> {
                 Toast.makeText(context, s.message, Toast.LENGTH_LONG).show()
@@ -139,7 +133,6 @@ fun AddLocationScreen(
         Text("Nieuwe Locatie", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
 
-        // Naam
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -169,7 +162,6 @@ fun AddLocationScreen(
         }
 
         Spacer(Modifier.height(24.dp))
-        // Locatie info
         if (currentGeoPoint != null) {
             Text(
                 "Locatie gevonden: ${currentGeoPoint!!.latitude}, ${currentGeoPoint!!.longitude}",
@@ -187,7 +179,6 @@ fun AddLocationScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // Opslaan knop
         Button(
             onClick = {
                 viewModel.saveLocation(name, category, currentGeoPoint, imageUri)
