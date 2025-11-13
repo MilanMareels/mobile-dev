@@ -7,7 +7,11 @@ import com.google.firebase.firestore.GeoPoint
 import edu.ap.opdracht.data.model.Location
 import edu.ap.opdracht.data.repository.LocationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed class AddLocationState {
@@ -70,4 +74,19 @@ class LocationViewModel : ViewModel() {
     fun resetState() {
         _state.value = AddLocationState.Idle
     }
+
+    private val _selectedCategory = MutableStateFlow("Alles")
+    val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+
+    fun selectCategory(category: String) {
+        _selectedCategory.value = category
+    }
+
+    val locations: StateFlow<List<Location>> = _selectedCategory.flatMapLatest { category ->
+        repository.getAllLocations(category)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = emptyList()
+    )
 }
