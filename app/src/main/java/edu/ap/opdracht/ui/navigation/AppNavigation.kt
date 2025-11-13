@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
@@ -25,6 +26,7 @@ import edu.ap.opdracht.Greeting
 import edu.ap.opdracht.ui.auth.AuthViewModel
 import edu.ap.opdracht.ui.auth.LoginScreen
 import edu.ap.opdracht.ui.auth.RegisterScreen
+import edu.ap.opdracht.ui.profile.ProfileScreen
 import edu.ap.opdracht.ui.settings.SettingsScreen
 import androidx.compose.material.icons.filled.Add
 import androidx.navigation.NavHostController
@@ -51,7 +53,7 @@ fun AuthNavigation(
             RegisterScreen(
                 authViewModel = authViewModel,
                 onGoToLogin = {
-                    navController.popBackStack() // Ga terug naar login
+                    navController.popBackStack()
                 }
             )
         }
@@ -62,13 +64,13 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     data object Home : Screen("home", "Home", Icons.Filled.Home)
     data object Add : Screen("add", "Toevoegen", Icons.Filled.Add)
     data object Settings : Screen("settings", "Instellingen", Icons.Filled.Settings)
+    data object Profile : Screen("profile", "Profiel", Icons.Filled.Person)
 }
 
 @Composable
 fun AppScreen(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
-    val navItems = listOf(Screen.Home, Screen.Add, Screen.Settings)
-
+    val navItems = listOf(Screen.Home, Screen.Add, Screen.Settings, Screen.Profile)
     Scaffold(
         bottomBar = {
             BottomAppBar {
@@ -121,6 +123,12 @@ fun AppScreen(authViewModel: AuthViewModel) {
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    authViewModel = authViewModel
+                )
+            }
+            composable(Screen.Profile.route) {
+                ProfileScreen(
                     modifier = Modifier.fillMaxSize(),
                     authViewModel = authViewModel
                 )

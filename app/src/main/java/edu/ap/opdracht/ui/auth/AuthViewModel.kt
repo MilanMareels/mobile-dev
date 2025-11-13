@@ -6,12 +6,14 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseUser
-import edu.ap.opdracht.data.repository.AuthRepository // Zorg dat dit pad klopt!
+import edu.ap.opdracht.data.model.User // Importeer het User model
+import edu.ap.opdracht.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+// AuthState blijft hetzelfde
 sealed class AuthState {
     data object Idle : AuthState()
     data object Loading : AuthState()
@@ -22,7 +24,6 @@ sealed class AuthState {
 class AuthViewModel : ViewModel() {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-
     private val authRepository = AuthRepository()
 
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
@@ -31,9 +32,32 @@ class AuthViewModel : ViewModel() {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
+    private val _userProfile = MutableStateFlow<User?>(null)
+    val userProfile: StateFlow<User?> = _userProfile.asStateFlow()
+
     init {
         auth.addAuthStateListener { firebaseAuth ->
-            _currentUser.value = firebaseAuth.currentUser
+            val user = firebaseAuth.currentUser
+            _currentUser.value = user
+
+            if (user != null) {
+                loadUserProfile(user.uid)
+            } else {
+                _userProfile.value = null
+            }
+        }
+    }
+
+    private fun loadUserProfile(uid: String) {
+        viewModelScope.launch {
+            val result = authRepository.getUserProfile(uid)
+            result.onSuccess { user ->
+                _userProfile.value = user
+            }
+            result.onFailure { exception ->
+                _authState.value = AuthState.Error("Profiel laden mislukt: ${exception.message}")
+                _userProfile.value = null
+            }
         }
     }
 
@@ -84,7 +108,7 @@ class AuthViewModel : ViewModel() {
     fun logout() {
         auth.signOut()
     }
-    
+
     fun resetAuthState() {
         _authState.value = AuthState.Idle
     }
