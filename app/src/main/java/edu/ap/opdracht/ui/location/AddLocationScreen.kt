@@ -4,22 +4,33 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.firestore.GeoPoint
 import kotlinx.coroutines.launch
 
+val galleryPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    Manifest.permission.READ_MEDIA_IMAGES
+} else {
+    Manifest.permission.READ_EXTERNAL_STORAGE
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLocationScreen(
@@ -30,14 +41,15 @@ fun AddLocationScreen(
     val scope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("Horeca") } // AC 4
+    var category by remember { mutableStateOf("Horeca") }
     var currentGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
     var locationError by remember { mutableStateOf<String?>(null) }
 
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
     // State van de ViewModel
     val state by viewModel.state.collectAsState()
 
-    val permissionLauncher = rememberLauncherForActivityResult(
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
@@ -47,6 +59,37 @@ fun AddLocationScreen(
             }
         } else {
             locationError = "Locatie permissie is geweigerd."
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        // De gebruiker heeft een foto gekozen (of niet)
+        imageUri = uri
+    }
+
+    val galleryPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permissie gekregen, start de galerij-kiezer
+            galleryLauncher.launch("image/*")
+        } else {
+            Toast.makeText(context, "Galerij permissie geweigerd", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun openGallery() {
+        when (ContextCompat.checkSelfPermission(context, galleryPermission)) {
+            PackageManager.PERMISSION_GRANTED -> {
+                // Permissie is al verleend, open galerij
+                galleryLauncher.launch("image/*")
+            }
+            else -> {
+                // Vraag permissie aan
+                galleryPermissionLauncher.launch(galleryPermission)
+            }
         }
     }
 
@@ -61,7 +104,7 @@ fun AddLocationScreen(
             }
             else -> {
                 // Vraag permissie aan
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }
     }
@@ -88,7 +131,8 @@ fun AddLocationScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -109,7 +153,22 @@ fun AddLocationScreen(
             onCategorySelected = { category = it }
         )
         Spacer(Modifier.height(24.dp))
+        Button(onClick = { openGallery() }, modifier = Modifier.fillMaxWidth()) {
+            Text("Kies Foto")
+        }
+        if (imageUri != null) {
+            Spacer(Modifier.height(16.dp))
+            AsyncImage(
+                model = imageUri,
+                contentDescription = "Gekozen foto",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.Crop
+            )
+        }
 
+        Spacer(Modifier.height(24.dp))
         // Locatie info
         if (currentGeoPoint != null) {
             Text(
@@ -131,7 +190,7 @@ fun AddLocationScreen(
         // Opslaan knop
         Button(
             onClick = {
-                viewModel.saveLocation(name, category, currentGeoPoint)
+                viewModel.saveLocation(name, category, currentGeoPoint, imageUri)
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = state !is AddLocationState.Loading && currentGeoPoint != null
