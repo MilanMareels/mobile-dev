@@ -24,7 +24,7 @@ class HomeViewModel(
     }
 
     val locations: StateFlow<List<Location>> = _selectedCategory.flatMapLatest { category ->
-        locationRepository.getMyLocations(category)
+        locationRepository.getAllLocations(category)
     }.stateIn(
         scope = viewModelScope,
         started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000L),

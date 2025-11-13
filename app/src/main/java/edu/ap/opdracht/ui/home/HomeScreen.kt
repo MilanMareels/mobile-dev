@@ -90,7 +90,9 @@ fun HomeScreen(
                 LocationItem(
                     location = location,
                     onClick = {
-                        onLocationClick(location.id.toString())
+                        if (!location.id.isNullOrBlank()) {
+                            onLocationClick(location.id)
+                        }
                     }
                 )
             }
