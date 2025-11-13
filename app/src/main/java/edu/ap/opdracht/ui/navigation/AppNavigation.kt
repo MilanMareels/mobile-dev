@@ -22,7 +22,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import edu.ap.opdracht.Greeting
 import edu.ap.opdracht.ui.auth.AuthViewModel
 import edu.ap.opdracht.ui.auth.LoginScreen
 import edu.ap.opdracht.ui.auth.RegisterScreen
