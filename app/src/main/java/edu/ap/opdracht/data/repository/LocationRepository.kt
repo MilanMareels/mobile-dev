@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.storage.storage
+import edu.ap.opdracht.data.model.Comment
+import edu.ap.opdracht.data.model.Rating
 import java.util.UUID
 
 class LocationRepository {
@@ -19,6 +21,12 @@ class LocationRepository {
     private val auth = Firebase.auth
     private val storage = Firebase.storage
 
+    fun getCurrentUserId(): String? {
+        return auth.currentUser?.uid
+    }
+    fun getCurrentUserDisplayName(): String {
+        return auth.currentUser?.displayName ?: "Anonieme Gebruiker"
+    }
     suspend fun uploadPhoto(imageUri: Uri): Result<String> {
         return try {
             // Maak een unieke bestandsnaam
@@ -36,16 +44,30 @@ class LocationRepository {
             Result.failure(e)
         }
     }
-    suspend fun addLocation(location: Location): Result<Unit> {
+    suspend fun addLocationWithDetails(
+        location: Location,
+        rating: Rating,
+        comment: Comment
+    ): Result<Unit> {
         return try {
-            val uid = auth.currentUser?.uid
+            val uid = getCurrentUserId()
             if (uid == null) {
                 return Result.failure(Exception("Gebruiker is niet ingelogd."))
             }
 
-            val locationWithUser = location.copy(addedByUid = uid)
+            val batch = db.batch()
 
-            db.collection("locations").add(locationWithUser).await()
+            val locationRef = db.collection("locations").document()
+
+            batch.set(locationRef, location)
+
+            val ratingRef = locationRef.collection("ratings").document(uid)
+            batch.set(ratingRef, rating)
+
+            val commentRef = locationRef.collection("comments").document()
+            batch.set(commentRef, comment)
+
+            batch.commit().await()
             Result.success(Unit)
 
         } catch (e: Exception) {

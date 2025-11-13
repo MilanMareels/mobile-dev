@@ -9,13 +9,18 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -44,8 +49,9 @@ fun AddLocationScreen(
     var category by remember { mutableStateOf("Horeca") }
     var currentGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
     var locationError by remember { mutableStateOf<String?>(null) }
-
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var rating by remember { mutableStateOf(0f) }
+    var comment by remember { mutableStateOf("") }
     // State van de ViewModel
     val state by viewModel.state.collectAsState()
 
@@ -139,20 +145,6 @@ fun AddLocationScreen(
         Text("Nieuwe Locatie", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
 
-        // Naam
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Naam van de locatie") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(Modifier.height(16.dp))
-
-        CategoryDropdown(
-            selectedCategory = category,
-            onCategorySelected = { category = it }
-        )
-        Spacer(Modifier.height(24.dp))
         Button(onClick = { openGallery() }, modifier = Modifier.fillMaxWidth()) {
             Text("Kies Foto")
         }
@@ -167,6 +159,40 @@ fun AddLocationScreen(
                 contentScale = ContentScale.Crop
             )
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Naam
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Naam van de locatie") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(16.dp))
+
+        CategoryDropdown(
+            selectedCategory = category,
+            onCategorySelected = { category = it }
+        )
+
+        Spacer(Modifier.height(16.dp))
+        Text("Beoordeling", style = MaterialTheme.typography.titleMedium)
+        StarRatingInput(
+            rating = rating,
+            onRatingChange = { rating = it }
+        )
+
+        Spacer(Modifier.height(16.dp))
+        OutlinedTextField(
+            value = comment,
+            onValueChange = { comment = it },
+            label = { Text("Beschrijving / Eerste commentaar") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp),
+            maxLines = 5
+        )
 
         Spacer(Modifier.height(24.dp))
         // Locatie info
@@ -190,7 +216,14 @@ fun AddLocationScreen(
         // Opslaan knop
         Button(
             onClick = {
-                viewModel.saveLocation(name, category, currentGeoPoint, imageUri)
+                viewModel.saveLocation(
+                    name = name,
+                    category = category,
+                    geoPoint = currentGeoPoint,
+                    imageUri = imageUri,
+                    ratingValue = rating.toDouble(),
+                    commentText = comment
+                )
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = state !is AddLocationState.Loading && currentGeoPoint != null
@@ -200,6 +233,34 @@ fun AddLocationScreen(
             } else {
                 Text("Opslaan")
             }
+        }
+    }
+}
+
+@Composable
+fun StarRatingInput(
+    rating: Float,
+    onRatingChange: (Float) -> Unit,
+    maxRating: Int = 5
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        for (i in 1..maxRating) {
+            Icon(
+                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                contentDescription = "Ster $i",
+                tint = Color(0xFFFFC107), // Goudkleur
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable {
+                        onRatingChange(i.toFloat())
+                    }
+                    .padding(4.dp)
+            )
         }
     }
 }
