@@ -22,14 +22,11 @@ class LocationRepository {
 
     suspend fun uploadPhoto(imageUri: Uri): Result<String> {
         return try {
-            // Maak een unieke bestandsnaam
             val fileName = "locations/${UUID.randomUUID()}.jpg"
             val storageRef = storage.reference.child(fileName)
 
-            // Upload het bestand
             storageRef.putFile(imageUri).await()
 
-            // Haal de download-URL op
             val downloadUrl = storageRef.downloadUrl.await().toString()
             Result.success(downloadUrl)
 
@@ -55,9 +52,15 @@ class LocationRepository {
     }
 
     fun getAllLocations(category: String?): Flow<List<Location>> {
-        return db.collection("locations")
+        var query: Query = db.collection("locations")
+            .orderBy("category")
             .orderBy("name", Query.Direction.ASCENDING)
-            .snapshots()
+
+        if (category != null && category != "Alles") {
+            query = query.whereEqualTo("category", category)
+        }
+
+        return query.snapshots()
             .map { snapshot ->
                 if (snapshot.metadata.hasPendingWrites()) {
                     return@map emptyList<Location>()

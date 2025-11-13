@@ -12,14 +12,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Je DetailUiState blijft hetzelfde
 data class DetailUiState(
     val location: Location? = null,
     val isLoading: Boolean = true,
     val error: String? = null
 )
 
-// DE CORRECTIE:
 class DetailViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {

@@ -28,10 +28,6 @@ import coil.compose.AsyncImage
 import edu.ap.opdracht.data.model.Location
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-/**
- * Het hoofdscherm, opgebouwd met een Scaffold om de FAB te tonen
- * en een LazyColumn voor alle scrollbare content.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -39,7 +35,6 @@ fun HomeScreen(
     onLocationClick: (locationId: String) -> Unit,
     onAddLocationClick: () -> Unit = {}
 ) {
-    // Haal de states op van de HomeViewModel
     val locations by homeViewModel.locations.collectAsStateWithLifecycle()
     val selectedCategory by homeViewModel.selectedCategory.collectAsStateWithLifecycle()
 
@@ -70,7 +65,6 @@ fun HomeScreen(
                 CityChips()
             }
 
-            // Item 3: Categorieën sectie (nu functioneel)
             item {
                 FilterChipRow(
                     selectedCategory = selectedCategory,
@@ -80,7 +74,6 @@ fun HomeScreen(
                 )
             }
 
-            // Item 4: "Populaire locaties" header
             item {
                 PopularLocationsHeader()
             }
@@ -97,7 +90,6 @@ fun HomeScreen(
                 )
             }
 
-            // Voeg extra ruimte toe aan de onderkant
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
@@ -146,7 +138,6 @@ fun FilterChipRow(
     selectedCategory: String,
     onCategorySelected: (String) -> Unit
 ) {
-    // Zorg dat deze categorieën matchen met je data
     val categories = listOf("Alles", "Horeca", "Hotel", "Bezienswaardigheid", "Overig")
 
     Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
@@ -215,7 +206,7 @@ fun LocationItem(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-            .clickable { onClick() }, // Deze `onClick` roept de navigatie aan
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(16.dp)
     ) {

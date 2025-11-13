@@ -28,12 +28,12 @@ import edu.ap.opdracht.ui.auth.RegisterScreen
 import edu.ap.opdracht.ui.profile.ProfileScreen
 import edu.ap.opdracht.ui.settings.SettingsScreen
 import androidx.compose.material.icons.filled.Add
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import edu.ap.opdracht.ui.detail.DetailScreen
 import edu.ap.opdracht.ui.home.HomeScreen
 import edu.ap.opdracht.ui.location.AddLocationScreen
+import edu.ap.opdracht.ui.location.MyLocationsScreen
 
 @Composable
 fun AuthNavigation(
@@ -110,27 +110,28 @@ fun AppScreen(authViewModel: AuthViewModel) {
                 HomeScreen (
                     onLocationClick = { locationId ->
                         navController.navigate("detail/$locationId")
+                    },
+                    onAddLocationClick = {
+                        navController.navigate(Screen.Add.route)
                     }
                 )
 
             }
             composable(
-                route = "detail/{locationId}", // {locationId} is het argument
+                route = "detail/{locationId}",
                 arguments = listOf(navArgument("locationId") {
                     type = NavType.StringType
                 })
             ) {
-                // De ViewModel pakt "locationId" automatisch op
                 DetailScreen(
                     onBackClick = {
-                        navController.popBackStack() // Ga terug
+                        navController.popBackStack()
                     }
                 )
             }
             composable(Screen.Add.route) {
                 AddLocationScreen(
                     onLocationAdded = {
-                        // Na succesvol toevoegen, ga terug naar Home
                         navController.navigate(Screen.Home.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 inclusive = true
@@ -148,7 +149,20 @@ fun AppScreen(authViewModel: AuthViewModel) {
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     modifier = Modifier.fillMaxSize(),
-                    authViewModel = authViewModel
+                    authViewModel = authViewModel,
+                    onMyLocationsClick = {
+                        navController.navigate("my_locations")
+                    }
+                )
+            }
+            composable("my_locations") {
+                MyLocationsScreen(
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
+                    onLocationClick = { locationId ->
+                        navController.navigate("detail/$locationId")
+                    }
                 )
             }
         }

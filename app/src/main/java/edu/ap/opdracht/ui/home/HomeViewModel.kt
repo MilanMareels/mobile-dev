@@ -13,12 +13,9 @@ import kotlinx.coroutines.flow.stateIn
 class HomeViewModel(
     private val locationRepository: LocationRepository = LocationRepository()
 ) : ViewModel() {
-
-    // 1. State om de geselecteerde categorie bij te houden (start met "Alles")
     private val _selectedCategory = MutableStateFlow("Alles")
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
-    // 2. Functie die de UI kan aanroepen om de categorie te veranderen
     fun selectCategory(category: String) {
         _selectedCategory.value = category
     }
