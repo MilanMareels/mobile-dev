@@ -54,7 +54,7 @@ class LocationRepository {
         }
     }
 
-    fun getAllLocations(): Flow<List<Location>> {
+    fun getAllLocations(category: String?): Flow<List<Location>> {
         return db.collection("locations")
             .orderBy("name", Query.Direction.ASCENDING)
             .snapshots()
@@ -66,15 +66,20 @@ class LocationRepository {
             }
     }
 
-    fun getMyLocations(): Flow<List<Location>> {
+    fun getMyLocations(category: String?): Flow<List<Location>> {
         val uid = auth.currentUser?.uid
         if (uid == null) {
             return kotlinx.coroutines.flow.flowOf(emptyList())
         }
 
-        return db.collection("locations")
+        var query: Query = db.collection("locations")
             .whereEqualTo("addedByUid", uid)
-            .snapshots()
+
+        if (category != null && category != "Alles") {
+            query = query.whereEqualTo("category", category)
+        }
+
+        return query.snapshots()
             .map { snapshot ->
                 if (snapshot.metadata.hasPendingWrites()) {
                     return@map emptyList<Location>()
