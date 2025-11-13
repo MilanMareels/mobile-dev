@@ -56,46 +56,42 @@ fun HomeScreen(
         }
     ) { paddingValues ->
 
-        // LazyColumn bevat alle scherm-elementen, zodat alles
-        // als één geheel kan scrollen.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Padding van de Scaffold
+                .padding(paddingValues)
         ) {
-            // Item 1: Welkomstitel
             item {
                 Header()
             }
 
-            // Item 2: Horizontale steden-lijst
             item {
                 CityChips()
             }
 
-            // Item 3: Categorieën sectie
             item {
                 CategorySection()
             }
 
-            // Item 4: "Populaire locaties" header
             item {
                 PopularLocationsHeader()
             }
 
-            // Items 5...N: De dynamische lijst van locaties
+
             items(locations) { location ->
                 LocationItem(
                     location = location,
                     onClick = {
-                        // Correctie: location.id is al een String
-                        onLocationClick(location.id.toString())
+                        // DE FIX: Controleer op ZOWEL null als een lege string
+                        if (!location.id.isNullOrBlank()) {
+                            onLocationClick(location.id)
+                        }
+                        // Als de id null of leeg is, gebeurt er niets.
+                        // Dit voorkomt de navigatie-crash.
                     }
                 )
             }
 
-            // Voeg extra ruimte toe aan de onderkant zodat de
-            // lijst niet onder de FAB verborgen zit
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
@@ -235,7 +231,7 @@ fun LocationItem(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-            .clickable { onClick() },
+            .clickable { onClick() }, // Deze `onClick` roept de navigatie aan
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -251,49 +247,18 @@ fun LocationItem(
 
             Column(modifier = Modifier.padding(16.dp)) {
 
-
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = location.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    // TODO: Vervang "4.3" door location.rating
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Rating",
-                            tint = Color(0xFFFFC107),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "4.3", // TODO: location.rating
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // TODO: Vervang "Hotel in het centrum" door location.description
+                // 1. Alleen de naam (de rating-rij is weg)
                 Text(
-                    text = "Hotel in het centrum", // TODO: location.description
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    text = location.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth() // Vult de breedte
                 )
 
+                // 2. De omschrijving is ook weg
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 3. Alleen de categorie
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = getCategoryColor(location.category).copy(alpha = 0.15f),

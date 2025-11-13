@@ -29,6 +29,9 @@ import edu.ap.opdracht.ui.profile.ProfileScreen
 import edu.ap.opdracht.ui.settings.SettingsScreen
 import androidx.compose.material.icons.filled.Add
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import edu.ap.opdracht.ui.detail.DetailScreen
 import edu.ap.opdracht.ui.home.HomeScreen
 import edu.ap.opdracht.ui.location.AddLocationScreen
 
@@ -110,6 +113,19 @@ fun AppScreen(authViewModel: AuthViewModel) {
                     }
                 )
 
+            }
+            composable(
+                route = "detail/{locationId}", // {locationId} is het argument
+                arguments = listOf(navArgument("locationId") {
+                    type = NavType.StringType
+                })
+            ) {
+                // De ViewModel pakt "locationId" automatisch op
+                DetailScreen(
+                    onBackClick = {
+                        navController.popBackStack() // Ga terug
+                    }
+                )
             }
             composable(Screen.Add.route) {
                 AddLocationScreen(

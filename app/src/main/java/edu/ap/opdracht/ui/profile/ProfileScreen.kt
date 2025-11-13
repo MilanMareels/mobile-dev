@@ -101,8 +101,17 @@ fun ProfileScreen(modifier: Modifier = Modifier, authViewModel: AuthViewModel) {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 ProfileMenuItem(
+                    icon = Icons.Outlined.LocationOn,
+                    iconTint = Color(0xFF4CAF50),
+                    iconBgColor = Color(0xFF8BC34A).copy(alpha = 0.1f),
+                    title = "Mijn Locaties",
+                    subtitle = "Je aangemaakte locaties",
+                    onClick = { /* TODO: Navigeer naar Favorieten */ }
+                )
+
+                ProfileMenuItem(
                     icon = Icons.Outlined.FavoriteBorder,
-                    iconTint = Color(0xFFBD10E0), // Paars
+                    iconTint = Color(0xFFBD10E0),
                     iconBgColor = Color(0xFFBD10E0).copy(alpha = 0.1f),
                     title = "Favorieten",
                     subtitle = "Je opgeslagen locaties",

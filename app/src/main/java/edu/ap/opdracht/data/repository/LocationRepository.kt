@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.storage.storage
+import edu.ap.opdracht.data.model.Rating
 import java.util.UUID
 
 class LocationRepository {
