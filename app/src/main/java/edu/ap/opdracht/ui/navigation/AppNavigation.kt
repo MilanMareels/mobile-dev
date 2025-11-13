@@ -22,7 +22,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import edu.ap.opdracht.Greeting
 import edu.ap.opdracht.ui.auth.AuthViewModel
 import edu.ap.opdracht.ui.auth.LoginScreen
 import edu.ap.opdracht.ui.auth.RegisterScreen
@@ -30,6 +29,7 @@ import edu.ap.opdracht.ui.profile.ProfileScreen
 import edu.ap.opdracht.ui.settings.SettingsScreen
 import androidx.compose.material.icons.filled.Add
 import androidx.navigation.NavHostController
+import edu.ap.opdracht.ui.home.HomeScreen
 import edu.ap.opdracht.ui.location.AddLocationScreen
 
 @Composable
@@ -104,10 +104,12 @@ fun AppScreen(authViewModel: AuthViewModel) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
-                Greeting(
-                    name = "Ingelogde Gebruiker",
-                    modifier = Modifier.fillMaxSize()
+                HomeScreen (
+                    onLocationClick = { locationId ->
+                        navController.navigate("detail/$locationId")
+                    }
                 )
+
             }
             composable(Screen.Add.route) {
                 AddLocationScreen(
