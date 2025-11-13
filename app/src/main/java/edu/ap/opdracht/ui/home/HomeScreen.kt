@@ -1,4 +1,4 @@
-package edu.ap.opdracht.ui.home // Zorg dat dit je package naam is
+package edu.ap.opdracht.ui.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,12 +9,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,23 +26,27 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import edu.ap.opdracht.data.model.Location
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Het hoofdscherm, opgebouwd met een Scaffold om de FAB te tonen
  * en een LazyColumn voor alle scrollbare content.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = viewModel(),
     onLocationClick: (locationId: String) -> Unit,
-    onAddLocationClick: () -> Unit = {} // Callback voor de FAB
+    onAddLocationClick: () -> Unit = {}
 ) {
-    val locations by homeViewModel.locations.collectAsState()
+    // Haal de states op van de HomeViewModel
+    val locations by homeViewModel.locations.collectAsStateWithLifecycle()
+    val selectedCategory by homeViewModel.selectedCategory.collectAsStateWithLifecycle()
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { onAddLocationClick() }, // TODO: Navigeer naar "add location" scherm
+                onClick = { onAddLocationClick() },
                 shape = CircleShape
             ) {
                 Icon(
@@ -56,12 +57,10 @@ fun HomeScreen(
         }
     ) { paddingValues ->
 
-        // LazyColumn bevat alle scherm-elementen, zodat alles
-        // als één geheel kan scrollen.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Padding van de Scaffold
+                .padding(paddingValues)
         ) {
             // Item 1: Welkomstitel
             item {
@@ -73,9 +72,14 @@ fun HomeScreen(
                 CityChips()
             }
 
-            // Item 3: Categorieën sectie
+            // Item 3: Categorieën sectie (nu functioneel)
             item {
-                CategorySection()
+                FilterChipRow(
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { category ->
+                        homeViewModel.selectCategory(category)
+                    }
+                )
             }
 
             // Item 4: "Populaire locaties" header
@@ -88,14 +92,12 @@ fun HomeScreen(
                 LocationItem(
                     location = location,
                     onClick = {
-                        // Correctie: location.id is al een String
                         onLocationClick(location.id.toString())
                     }
                 )
             }
 
-            // Voeg extra ruimte toe aan de onderkant zodat de
-            // lijst niet onder de FAB verborgen zit
+            // Voeg extra ruimte toe aan de onderkant
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
@@ -126,7 +128,6 @@ fun Header() {
 @Composable
 fun CityChips() {
     val cities = listOf("Brussel", "Gent", "Amsterdam", "Rotterdam")
-
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -139,54 +140,37 @@ fun CityChips() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategorySection() {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+fun FilterChipRow(
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit
+) {
+    // Zorg dat deze categorieën matchen met je data
+    val categories = listOf("Alles", "Horeca", "Hotel", "Bezienswaardigheid", "Overig")
+
+    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
         Text(
             text = "Categorieën",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Row(
+        LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            CategoryItem(icon = Icons.Default.Home, label = "Restaurant")
-            CategoryItem(icon = Icons.Default.Home, label = "Hotel")
-            CategoryItem(icon = Icons.Default.Star, label = "Attractie")
-            CategoryItem(icon = Icons.Default.ShoppingCart, label = "Winkel")
+            items(categories) { category ->
+                FilterChip(
+                    selected = (category == selectedCategory),
+                    onClick = { onCategorySelected(category) },
+                    label = { Text(category) }
+                )
+            }
         }
     }
 }
 
-@Composable
-fun CategoryItem(icon: ImageVector, label: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { /* TODO: Filter op categorie */ }
-    ) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-            modifier = Modifier.size(64.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .padding(16.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
 
 @Composable
 fun PopularLocationsHeader() {
@@ -221,10 +205,6 @@ fun PopularLocationsHeader() {
     }
 }
 
-
-
-
-
 @Composable
 fun LocationItem(
     location: Location,
@@ -250,8 +230,6 @@ fun LocationItem(
             )
 
             Column(modifier = Modifier.padding(16.dp)) {
-
-
                 Row(
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -263,8 +241,6 @@ fun LocationItem(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
-
-                    // TODO: Vervang "4.3" door location.rating
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Star,
@@ -280,10 +256,7 @@ fun LocationItem(
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.height(4.dp))
-
-                // TODO: Vervang "Hotel in het centrum" door location.description
                 Text(
                     text = "Hotel in het centrum", // TODO: location.description
                     style = MaterialTheme.typography.bodyMedium,
@@ -291,9 +264,7 @@ fun LocationItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = getCategoryColor(location.category).copy(alpha = 0.15f),
@@ -314,10 +285,12 @@ fun LocationItem(
 @Composable
 private fun getCategoryColor(category: String): Color {
     return when (category.lowercase()) {
-        "restaurant" -> Color(0xFFE65100)
+        "horeca" -> Color(0xFFE65100)
         "hotel" -> Color(0xFF0D47A1)
+        "bezienswaardigheid" -> Color(0xFF1B5E20)
         "attractie" -> Color(0xFF1B5E20)
         "winkel" -> Color(0xFF4A148C)
+        "overig" -> MaterialTheme.colorScheme.secondary
         else -> MaterialTheme.colorScheme.primary
     }
 }
