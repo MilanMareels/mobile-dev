@@ -62,6 +62,8 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
     implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore")

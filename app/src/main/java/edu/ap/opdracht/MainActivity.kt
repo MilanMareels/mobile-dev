@@ -1,6 +1,7 @@
 package edu.ap.opdracht
 
 import android.os.Bundle
+import android.preference.PreferenceManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,14 +17,20 @@ import edu.ap.opdracht.ui.navigation.AppScreen
 import edu.ap.opdracht.ui.navigation.AuthNavigation
 import edu.ap.opdracht.ui.theme.MobieldevTheme
 
+import org.osmdroid.config.Configuration
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        Configuration.getInstance().load(
+            this,
+            PreferenceManager.getDefaultSharedPreferences(this)
+        )
+
         setContent {
             MobieldevTheme {
                 val authViewModel: AuthViewModel = viewModel()
-
                 val currentUser by authViewModel.currentUser.collectAsState()
 
                 if (currentUser == null) {

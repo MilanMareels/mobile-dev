@@ -18,10 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Face
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Button
@@ -50,7 +47,11 @@ import edu.ap.opdracht.R
 import edu.ap.opdracht.ui.auth.AuthViewModel
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier, authViewModel: AuthViewModel) {
+fun ProfileScreen(
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel,
+    onMyLocationsClick: () -> Unit
+) {
 
     val userProfile by authViewModel.userProfile.collectAsState()
     val profile = userProfile
@@ -101,8 +102,17 @@ fun ProfileScreen(modifier: Modifier = Modifier, authViewModel: AuthViewModel) {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 ProfileMenuItem(
+                    icon = Icons.Outlined.LocationOn,
+                    iconTint = Color(0xFF4CAF50),
+                    iconBgColor = Color(0xFF8BC34A).copy(alpha = 0.1f),
+                    title = "Mijn Locaties",
+                    subtitle = "Je aangemaakte locaties",
+                    onClick = onMyLocationsClick
+                )
+
+                ProfileMenuItem(
                     icon = Icons.Outlined.FavoriteBorder,
-                    iconTint = Color(0xFFBD10E0), // Paars
+                    iconTint = Color(0xFFBD10E0),
                     iconBgColor = Color(0xFFBD10E0).copy(alpha = 0.1f),
                     title = "Favorieten",
                     subtitle = "Je opgeslagen locaties",
