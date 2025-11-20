@@ -13,11 +13,19 @@ import kotlinx.coroutines.flow.stateIn
 class HomeViewModel(
     private val locationRepository: LocationRepository = LocationRepository()
 ) : ViewModel() {
+
     private val _selectedCategory = MutableStateFlow("Alles")
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
+    private val _isMapView = MutableStateFlow(false)
+    val isMapView: StateFlow<Boolean> = _isMapView.asStateFlow()
+
     fun selectCategory(category: String) {
         _selectedCategory.value = category
+    }
+    
+    fun toggleViewMode(showMap: Boolean) {
+        _isMapView.value = showMap
     }
 
     val locations: StateFlow<List<Location>> = _selectedCategory.flatMapLatest { category ->
