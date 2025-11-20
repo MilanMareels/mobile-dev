@@ -16,6 +16,8 @@ data class Location(
     val address: String? = null,
 
     val addedByUid: String = "",
+    val averageRating: Double = 0.0,
+    val comments: String = "",
 
     @ServerTimestamp
     val timestamp: Timestamp? = null

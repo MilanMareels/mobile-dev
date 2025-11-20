@@ -80,7 +80,9 @@ class LocationViewModel : ViewModel() {
                     category = category,
                     location = geoPoint,
                     photoUrl = downloadUrl,
-                    addedByUid = uid
+                    addedByUid = uid,
+                    averageRating = ratingValue,
+                    comments = commentText
                 )
 
                 val rating = Rating(

@@ -231,20 +231,12 @@ fun LocationItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "4.3", // TODO: location.rating
+                            text = location.averageRating.toString(),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Hotel in het centrum", // TODO: location.description
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
                 Spacer(modifier = Modifier.height(16.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),

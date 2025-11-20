@@ -4,12 +4,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,11 +80,37 @@ fun LocationDetails(location: Location) {
         )
 
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = location.name,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = location.name,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // Rating weergave
+                Column(horizontalAlignment = Alignment.End) {
+                    Row {
+                        val rating = location.averageRating.toInt()
+                        for (i in 1..5) {
+                            Icon(
+                                imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.StarOutline,
+                                contentDescription = null,
+                                tint = Color(0xFFFFC107),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = "${location.averageRating}/5",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = location.category,
@@ -91,7 +120,7 @@ fun LocationDetails(location: Location) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Hotel in het centrum",
+                text = location.comments,
                 style = MaterialTheme.typography.bodyLarge
             )
 
