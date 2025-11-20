@@ -15,18 +15,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import edu.ap.opdracht.data.model.Location
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import edu.ap.opdracht.ui.map.HomeMapView
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import java.util.ArrayList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,53 +40,76 @@ fun HomeScreen(
     onLocationClick: (locationId: String) -> Unit,
     onAddLocationClick: () -> Unit = {}
 ) {
+    // Haal alle states op
     val locations by homeViewModel.locations.collectAsStateWithLifecycle()
     val selectedCategory by homeViewModel.selectedCategory.collectAsStateWithLifecycle()
+    val isMapView by homeViewModel.isMapView.collectAsStateWithLifecycle()
 
     Scaffold(
-
     ) { paddingValues ->
-
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            item {
-                Header()
-            }
+            Header()
+            CityChips()
+            FilterChipRow(
+                selectedCategory = selectedCategory,
+                onCategorySelected = { category ->
+                    homeViewModel.selectCategory(category)
+                }
+            )
 
-            item {
-                CityChips()
-            }
+            PopularLocationsHeader(
+                isMapView = isMapView,
+                onToggle = { showMap -> homeViewModel.toggleViewMode(showMap) }
+            )
 
-            item {
-                FilterChipRow(
-                    selectedCategory = selectedCategory,
-                    onCategorySelected = { category ->
-                        homeViewModel.selectCategory(category)
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (isMapView) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(450.dp)
+                                .padding(16.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                        ) {
+                            HomeMapView(
+                                locations = locations,
+                                onLocationClick = onLocationClick
+                            )
+                        }
+
+                        Text(
+                            text = "${locations.size} locaties gevonden",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
                     }
-                )
-            }
-
-            item {
-                PopularLocationsHeader()
-            }
-
-
-            items(locations) { location ->
-                LocationItem(
-                    location = location,
-                    onClick = {
-                        if (!location.id.isNullOrBlank()) {
-                            onLocationClick(location.id)
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 80.dp)
+                    ) {
+                        items(locations) { location ->
+                            LocationItem(
+                                location = location,
+                                onClick = {
+                                    if (!location.id.isNullOrBlank()) {
+                                        onLocationClick(location.id)
+                                    }
+                                }
+                            )
                         }
                     }
-                )
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
+                }
             }
         }
     }
@@ -95,7 +123,7 @@ fun Header() {
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "Welkome in Antwerpen",
+            text = "Welkom in Antwerpen",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
@@ -152,13 +180,15 @@ fun FilterChipRow(
     }
 }
 
-
 @Composable
-fun PopularLocationsHeader() {
+fun PopularLocationsHeader(
+    isMapView: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -168,17 +198,20 @@ fun PopularLocationsHeader() {
             fontWeight = FontWeight.Bold
         )
         Row {
-            // TODO: Maak deze knoppen functioneel (toggle)
+            // Lijst knop
             Button(
-                onClick = { /* Geselecteerd: Lijst */ },
-                modifier = Modifier.height(40.dp)
+                onClick = { onToggle(false) },
+                modifier = Modifier.height(40.dp),
+                colors = if (!isMapView) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
             ) {
                 Text("Lijst", fontSize = 12.sp)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            OutlinedButton(
-                onClick = { /* Geselecteerd: Kaart */ },
-                modifier = Modifier.height(40.dp)
+            // Kaart knop
+            Button(
+                onClick = { onToggle(true) },
+                modifier = Modifier.height(40.dp),
+                colors = if (isMapView) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
             ) {
                 Text("Kaart", fontSize = 12.sp)
             }

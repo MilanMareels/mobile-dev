@@ -26,7 +26,6 @@ import edu.ap.opdracht.ui.auth.AuthViewModel
 import edu.ap.opdracht.ui.auth.LoginScreen
 import edu.ap.opdracht.ui.auth.RegisterScreen
 import edu.ap.opdracht.ui.profile.ProfileScreen
-import edu.ap.opdracht.ui.settings.SettingsScreen
 import androidx.compose.material.icons.filled.Add
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -66,14 +65,13 @@ fun AuthNavigation(
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     data object Home : Screen("home", "Home", Icons.Filled.Home)
     data object Add : Screen("add", "Toevoegen", Icons.Filled.Add)
-    data object Settings : Screen("settings", "Instellingen", Icons.Filled.Settings)
     data object Profile : Screen("profile", "Profiel", Icons.Filled.Person)
 }
 
 @Composable
 fun AppScreen(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
-    val navItems = listOf(Screen.Home, Screen.Add, Screen.Settings, Screen.Profile)
+    val navItems = listOf(Screen.Home, Screen.Add, Screen.Profile)
     Scaffold(
         bottomBar = {
             BottomAppBar {
@@ -138,12 +136,6 @@ fun AppScreen(authViewModel: AuthViewModel) {
                             }
                         }
                     }
-                )
-            }
-            composable(Screen.Settings.route) {
-                SettingsScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    authViewModel = authViewModel
                 )
             }
             composable(Screen.Profile.route) {
