@@ -84,20 +84,27 @@ class LocationRepository {
         }
     }
 
-    fun getAllLocations(category: String?): Flow<List<Location>> {
-        var query: Query = db.collection("locations")
-            .orderBy("category")
+    fun getCities(): Flow<List<City>> {
+        return db.collection("cities")
             .orderBy("name", Query.Direction.ASCENDING)
+            .snapshots()
+            .map { snapshot ->
+                snapshot.toObjects(City::class.java)
+            }
+    }
+    fun getAllLocations(category: String?, cityId: String?): Flow<List<Location>> {
+        var query: Query = db.collection("locations")
 
         if (category != null && category != "Alles") {
             query = query.whereEqualTo("category", category)
         }
 
+        if (cityId != null && cityId != "Alles") {
+            query = query.whereEqualTo("cityId", cityId)
+        }
+
         return query.snapshots()
             .map { snapshot ->
-                if (snapshot.metadata.hasPendingWrites()) {
-                    return@map emptyList<Location>()
-                }
                 snapshot.toObjects(Location::class.java)
             }
     }
