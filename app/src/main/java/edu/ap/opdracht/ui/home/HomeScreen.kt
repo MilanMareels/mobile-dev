@@ -5,55 +5,57 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import edu.ap.opdracht.data.model.City
 import edu.ap.opdracht.data.model.Location
 import edu.ap.opdracht.ui.map.HomeMapView
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
-import java.util.ArrayList
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = viewModel(),
     onLocationClick: (locationId: String) -> Unit,
     onAddLocationClick: () -> Unit = {}
 ) {
-    // Haal alle states op
+    // Haal alle states op van de HomeViewModel
     val locations by homeViewModel.locations.collectAsStateWithLifecycle()
     val selectedCategory by homeViewModel.selectedCategory.collectAsStateWithLifecycle()
+    val cities by homeViewModel.cities.collectAsStateWithLifecycle()
+    val selectedCityId by homeViewModel.selectedCityId.collectAsStateWithLifecycle()
     val isMapView by homeViewModel.isMapView.collectAsStateWithLifecycle()
 
-    Scaffold(
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Header en Filters (Vast bovenaan)
             Header()
-            CityChips()
+
+            CityChips(
+                cities = cities,
+                selectedCityId = selectedCityId,
+                onCitySelected = { cityId ->
+                    homeViewModel.selectCity(cityId)
+                }
+            )
+
             FilterChipRow(
                 selectedCategory = selectedCategory,
                 onCategorySelected = { category ->
@@ -66,6 +68,7 @@ fun HomeScreen(
                 onToggle = { showMap -> homeViewModel.toggleViewMode(showMap) }
             )
 
+            // Content (Kaart of Lijst)
             Box(modifier = Modifier.fillMaxSize()) {
                 if (isMapView) {
                     Column(
@@ -75,7 +78,7 @@ fun HomeScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(450.dp)
+                                .weight(1f) // Laat de kaart de rest van de ruimte vullen
                                 .padding(16.dp),
                             shape = RoundedCornerShape(16.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -90,7 +93,7 @@ fun HomeScreen(
                             text = "${locations.size} locaties gevonden",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray,
-                            modifier = Modifier.padding(top = 8.dp)
+                            modifier = Modifier.padding(bottom = 16.dp)
                         )
                     }
                 } else {
@@ -98,11 +101,21 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 80.dp)
                     ) {
+                        if (locations.isEmpty()) {
+                            item {
+                                Text(
+                                    "Geen locaties gevonden voor deze filters.",
+                                    modifier = Modifier.padding(16.dp),
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+
                         items(locations) { location ->
                             LocationItem(
                                 location = location,
                                 onClick = {
-                                    if (!location.id.isNullOrBlank()) {
+                                    if (!location.id.isNullOrEmpty()) {
                                         onLocationClick(location.id)
                                     }
                                 }
@@ -136,16 +149,36 @@ fun Header() {
 }
 
 @Composable
-fun CityChips() {
-    val cities = listOf("Brussel", "Gent", "Amsterdam", "Rotterdam")
+fun CityChips(
+    cities: List<City>,
+    selectedCityId: String?,
+    onCitySelected: (String) -> Unit
+) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item {
+            val isSelected = selectedCityId == "Alles" || selectedCityId == null
+            FilterChip(
+                selected = isSelected,
+                onClick = { onCitySelected("Alles") },
+                label = { Text("Alle Steden") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+
         items(cities) { city ->
-            Button(onClick = { /* TODO: Filter op stad */ }) {
-                Text(city)
-            }
+            val isSelected = city.id == selectedCityId
+
+            FilterChip(
+                selected = isSelected,
+                onClick = { onCitySelected(city.id) },
+                label = { Text(city.name) }
+            )
         }
     }
 }
@@ -158,13 +191,13 @@ fun FilterChipRow(
 ) {
     val categories = listOf("Alles", "Horeca", "Hotel", "Bezienswaardigheid", "Overig")
 
-    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(
             text = "Categorieën",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -264,7 +297,7 @@ fun LocationItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = location.averageRating.toString(),
+                            text = String.format("%.1f", location.averageRating),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )

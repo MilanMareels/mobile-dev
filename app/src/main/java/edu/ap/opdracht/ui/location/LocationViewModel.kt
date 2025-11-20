@@ -9,11 +9,8 @@ import edu.ap.opdracht.data.model.Location
 import edu.ap.opdracht.data.model.Rating
 import edu.ap.opdracht.data.repository.LocationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed class AddLocationState {
@@ -24,11 +21,33 @@ sealed class AddLocationState {
 }
 
 class LocationViewModel : ViewModel() {
-
     private val repository = LocationRepository()
 
+    // --- Add Location States ---
     private val _state = MutableStateFlow<AddLocationState>(AddLocationState.Idle)
     val state: StateFlow<AddLocationState> = _state
+
+    // --- Adres detectie ---
+    private var detectedCityName: String = "Onbekend"
+    private var detectedPostalCode: String = ""
+
+    private val _addressText = MutableStateFlow("Locatie zoeken...")
+    val addressText: StateFlow<String> = _addressText.asStateFlow()
+
+    fun onLocationFetched(context: android.content.Context, geoPoint: GeoPoint) {
+        viewModelScope.launch {
+            val result = edu.ap.opdracht.utils.getAddressFromCoordinates(context, geoPoint.latitude, geoPoint.longitude)
+            if (result != null) {
+                _addressText.value = result.fullAddress
+                detectedCityName = result.cityName
+                detectedPostalCode = result.postalCode
+            } else {
+                _addressText.value = "Adres onbekend (${geoPoint.latitude}, ${geoPoint.longitude})"
+                detectedCityName = "Onbekend"
+                detectedPostalCode = ""
+            }
+        }
+    }
 
     fun saveLocation(
         name: String,
@@ -82,7 +101,8 @@ class LocationViewModel : ViewModel() {
                     photoUrl = downloadUrl,
                     addedByUid = uid,
                     averageRating = ratingValue,
-                    comments = commentText
+                    // comments = commentText, // Let op: dit veld bestaat wss niet in Location, comment gaat in aparte collectie
+                    address = _addressText.value
                 )
 
                 val rating = Rating(
@@ -96,8 +116,10 @@ class LocationViewModel : ViewModel() {
                     userDisplayName = displayName
                 )
 
-                // 3. Roep de nieuwe repository-functie aan
-                val addResult = repository.addLocationWithDetails(location, rating, comment)
+                val addResult = repository.addLocationWithDetails(
+                    location, rating, comment,
+                    detectedCityName, detectedPostalCode
+                )
 
                 addResult.onSuccess {
                     _state.value = AddLocationState.Success
@@ -114,20 +136,6 @@ class LocationViewModel : ViewModel() {
 
     fun resetState() {
         _state.value = AddLocationState.Idle
+        _addressText.value = "Locatie zoeken..."
     }
-
-    private val _selectedCategory = MutableStateFlow("Alles")
-    val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
-
-    fun selectCategory(category: String) {
-        _selectedCategory.value = category
-    }
-
-    val locations: StateFlow<List<Location>> = _selectedCategory.flatMapLatest { category ->
-        repository.getAllLocations(category)
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Lazily,
-        initialValue = emptyList()
-    )
 }

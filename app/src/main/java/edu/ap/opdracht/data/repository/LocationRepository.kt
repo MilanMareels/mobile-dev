@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.storage.storage
+import edu.ap.opdracht.data.model.City
 import edu.ap.opdracht.data.model.Comment
 import edu.ap.opdracht.data.model.Rating
 import java.util.UUID
@@ -44,7 +45,9 @@ class LocationRepository {
     suspend fun addLocationWithDetails(
         location: Location,
         rating: Rating,
-        comment: Comment
+        comment: Comment,
+        cityName: String,
+        postalCode: String
     ): Result<Unit> {
         return try {
             val uid = getCurrentUserId()
@@ -52,11 +55,19 @@ class LocationRepository {
                 return Result.failure(Exception("Gebruiker is niet ingelogd."))
             }
 
+            val finalCityId = getOrCreateCityId(cityName, postalCode)
+
+            if (finalCityId.isBlank()) {
+                return Result.failure(Exception("Kon geen geldig City ID genereren"))
+            }
+
+            val finalLocation = location.copy(cityId = finalCityId)
+
             val batch = db.batch()
 
             val locationRef = db.collection("locations").document()
 
-            batch.set(locationRef, location)
+            batch.set(locationRef, finalLocation)
 
             val ratingRef = locationRef.collection("ratings").document(uid)
             batch.set(ratingRef, rating)
@@ -68,24 +79,32 @@ class LocationRepository {
             Result.success(Unit)
 
         } catch (e: Exception) {
+            e.printStackTrace()
             Result.failure(e)
         }
     }
 
-    fun getAllLocations(category: String?): Flow<List<Location>> {
-        var query: Query = db.collection("locations")
-            .orderBy("category")
+    fun getCities(): Flow<List<City>> {
+        return db.collection("cities")
             .orderBy("name", Query.Direction.ASCENDING)
+            .snapshots()
+            .map { snapshot ->
+                snapshot.toObjects(City::class.java)
+            }
+    }
+    fun getAllLocations(category: String?, cityId: String?): Flow<List<Location>> {
+        var query: Query = db.collection("locations")
 
         if (category != null && category != "Alles") {
             query = query.whereEqualTo("category", category)
         }
 
+        if (cityId != null && cityId != "Alles") {
+            query = query.whereEqualTo("cityId", cityId)
+        }
+
         return query.snapshots()
             .map { snapshot ->
-                if (snapshot.metadata.hasPendingWrites()) {
-                    return@map emptyList<Location>()
-                }
                 snapshot.toObjects(Location::class.java)
             }
     }
@@ -123,6 +142,36 @@ class LocationRepository {
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    private suspend fun getOrCreateCityId(cityName: String, postalCode: String): String {
+        val safeName = if (cityName.isBlank()) "Onbekend" else cityName
+        val safeZip = if (postalCode.isBlank()) "0000" else postalCode
+
+        val querySnapshot = db.collection("cities")
+            .whereEqualTo("name", safeName)
+            .whereEqualTo("postalCode", safeZip)
+            .get()
+            .await()
+
+        if (!querySnapshot.isEmpty) {
+            val existingId = querySnapshot.documents[0].id
+            println("DEBUG: Stad gevonden: $safeName met ID: $existingId")
+            return existingId
+        } else {
+            val newCityRef = db.collection("cities").document()
+
+            val newCity = edu.ap.opdracht.data.model.City(
+                id = newCityRef.id,
+                name = safeName,
+                postalCode = safeZip
+            )
+
+            newCityRef.set(newCity).await()
+
+            println("DEBUG: Nieuwe stad gemaakt: $safeName met ID: ${newCityRef.id}")
+            return newCityRef.id
         }
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
@@ -54,6 +55,7 @@ fun AddLocationScreen(
     var comment by remember { mutableStateOf("") }
     // State van de ViewModel
     val state by viewModel.state.collectAsState()
+    val addressText by viewModel.addressText.collectAsState()
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -62,6 +64,7 @@ fun AddLocationScreen(
             locationError = null
             getCurrentLocation(context) { geoPoint ->
                 currentGeoPoint = geoPoint
+                viewModel.onLocationFetched(context, geoPoint)
             }
         } else {
             locationError = "Locatie permissie is geweigerd."
@@ -101,6 +104,7 @@ fun AddLocationScreen(
                 locationError = null
                 getCurrentLocation(context) { geoPoint ->
                     currentGeoPoint = geoPoint
+                    viewModel.onLocationFetched(context, geoPoint)
                 }
             }
             else -> {
@@ -190,10 +194,14 @@ fun AddLocationScreen(
 
         Spacer(Modifier.height(24.dp))
         if (currentGeoPoint != null) {
-            Text(
-                "Locatie gevonden: ${currentGeoPoint!!.latitude}, ${currentGeoPoint!!.longitude}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = addressText, // Dit is nu bv. "Atomiumsquare 1, 1020 Brussel"
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         } else {
             Text(
                 locationError ?: "Locatie wordt opgehaald...",

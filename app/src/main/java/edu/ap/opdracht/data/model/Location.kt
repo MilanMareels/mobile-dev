@@ -14,6 +14,7 @@ data class Location(
 
     val location: GeoPoint? = null,
     val address: String? = null,
+    val cityId: String = "",
 
     val addedByUid: String = "",
     val averageRating: Double = 0.0,
