@@ -16,7 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -251,9 +251,9 @@ fun StarRatingInput(
     ) {
         for (i in 1..maxRating) {
             Icon(
-                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
                 contentDescription = "Ster $i",
-                tint = Color(0xFFFFC107), // Goudkleur
+                tint = Color(0xFFFFC107),
                 modifier = Modifier
                     .size(40.dp)
                     .clickable {
