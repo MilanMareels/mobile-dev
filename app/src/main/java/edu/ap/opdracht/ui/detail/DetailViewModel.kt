@@ -22,14 +22,12 @@ data class DetailUiState(
 class DetailViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    // Initialiseer repo hier (of via DI als je dat hebt)
     private val locationRepository = LocationRepository()
     private val locationId: String? = savedStateHandle.get("locationId")
 
     private val _uiState = MutableStateFlow(DetailUiState())
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
-    // Live lijst van comments
     val comments: StateFlow<List<Comment>> = if (locationId != null) {
         locationRepository.getCommentsForLocation(locationId)
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -59,7 +57,6 @@ class DetailViewModel(
         }
     }
 
-    // Functie aangeroepen door UI om rating te versturen
     fun submitRating(rating: Double, comment: String) {
         if (locationId == null) return
         viewModelScope.launch {
