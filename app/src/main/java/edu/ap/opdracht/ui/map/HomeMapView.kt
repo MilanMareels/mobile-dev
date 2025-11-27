@@ -26,7 +26,6 @@ fun HomeMapView(
                 setTileSource(TileSourceFactory.MAPNIK)
                 setMultiTouchControls(true)
 
-                // OPTIE 1: Beperk hoe ver je überhaupt mag inzoomen in de hele app
                 maxZoomLevel = 18.0
                 minZoomLevel = 4.0
 
@@ -60,32 +59,24 @@ fun HomeMapView(
                 }
             }
 
-            // --- DE FIX ZIT HIER ---
             if (geoPoints.size == 1) {
-                // SCENARIO 1: Er is precies één locatie.
-                // Zoom niet naar bounding box, maar centreer gewoon en zet een vaste zoom.
+
                 mapView.controller.setCenter(geoPoints[0])
-                mapView.controller.setZoom(15.0) // 15 is een mooi straat-niveau
+                mapView.controller.setZoom(15.0)
             }
             else if (geoPoints.isNotEmpty()) {
-                // SCENARIO 2: Meerdere locaties.
+
                 mapView.post {
                     val boundingBox = org.osmdroid.util.BoundingBox.fromGeoPoints(geoPoints)
-                    // zoomToBoundingBox(box, animated, border, maxZoom, speed)
-                    // We geven hier 15.0 mee als 'maxZoom' parameter (als je library versie dit ondersteunt)
-                    // Als jouw versie die parameters niet heeft, gebruik: mapView.zoomToBoundingBox(boundingBox, true, 100)
 
-                    // Probeer de veilige manier (standaard):
                     mapView.zoomToBoundingBox(boundingBox, true, 100)
 
-                    // Check achteraf: als hij té ver is ingezoomd (omdat punten dicht bij elkaar liggen), zoom uit.
                     if (mapView.zoomLevelDouble > 15.0) {
                         mapView.controller.setZoom(15.0)
                     }
                 }
             }
             else {
-                // SCENARIO 3: Geen locaties.
                 mapView.controller.setCenter(startPoint)
                 mapView.controller.setZoom(13.0)
             }
