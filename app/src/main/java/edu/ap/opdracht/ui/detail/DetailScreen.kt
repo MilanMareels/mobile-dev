@@ -138,7 +138,7 @@ fun LocationDetails(location: Location) {
                             Icon(
                                 imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
                                 contentDescription = null,
-                                tint = Color(0xFFFFC107),
+                                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -194,7 +194,7 @@ fun AddReviewSection(onSubmit: (Double, String) -> Unit) {
                     Icon(
                         imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
                         contentDescription = "$i Sterren",
-                        tint = Color(0xFFFFC107),
+                        tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
                         modifier = Modifier
                             .size(32.dp)
                             .clickable { rating = i }

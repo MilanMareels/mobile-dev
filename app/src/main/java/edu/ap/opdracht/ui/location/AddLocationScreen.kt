@@ -251,9 +251,9 @@ fun StarRatingInput(
     ) {
         for (i in 1..maxRating) {
             Icon(
-                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
+                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star, // <--- HIER
                 contentDescription = "Ster $i",
-                tint = Color(0xFFFFC107),
+                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray, // <--- HIER
                 modifier = Modifier
                     .size(40.dp)
                     .clickable {
