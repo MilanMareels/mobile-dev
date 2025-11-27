@@ -25,8 +25,12 @@ fun HomeMapView(
             MapView(context).apply {
                 setTileSource(TileSourceFactory.MAPNIK)
                 setMultiTouchControls(true)
-                controller.setZoom(13.0)
+
+                maxZoomLevel = 18.0
+                minZoomLevel = 4.0
+
                 controller.setCenter(startPoint)
+                controller.setZoom(13.0)
             }
         },
         update = { mapView ->
@@ -37,23 +41,17 @@ fun HomeMapView(
             locations.forEach { location ->
                 location.location?.let { firebaseGeo ->
                     val marker = Marker(mapView)
-
                     val osmPoint = GeoPoint(firebaseGeo.latitude, firebaseGeo.longitude)
-                    marker.position = osmPoint
 
+                    marker.position = osmPoint
                     geoPoints.add(osmPoint)
 
                     marker.title = location.name
                     marker.snippet = location.category
-
                     marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
 
                     marker.setOnMarkerClickListener { m, _ ->
-                        if (m.isInfoWindowShown) {
-                            m.closeInfoWindow()
-                        } else {
-                            m.showInfoWindow()
-                        }
+                        if (m.isInfoWindowShown) m.closeInfoWindow() else m.showInfoWindow()
                         true
                     }
 
@@ -61,12 +59,24 @@ fun HomeMapView(
                 }
             }
 
-            if (geoPoints.isNotEmpty()) {
+            if (geoPoints.size == 1) {
+
+                mapView.controller.setCenter(geoPoints[0])
+                mapView.controller.setZoom(15.0)
+            }
+            else if (geoPoints.isNotEmpty()) {
+
                 mapView.post {
                     val boundingBox = org.osmdroid.util.BoundingBox.fromGeoPoints(geoPoints)
+
                     mapView.zoomToBoundingBox(boundingBox, true, 100)
+
+                    if (mapView.zoomLevelDouble > 15.0) {
+                        mapView.controller.setZoom(15.0)
+                    }
                 }
-            } else {
+            }
+            else {
                 mapView.controller.setCenter(startPoint)
                 mapView.controller.setZoom(13.0)
             }
