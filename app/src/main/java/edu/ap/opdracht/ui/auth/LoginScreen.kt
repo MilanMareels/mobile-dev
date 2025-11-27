@@ -31,7 +31,7 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp), // Meer padding voor de 'schone' look
+                .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 

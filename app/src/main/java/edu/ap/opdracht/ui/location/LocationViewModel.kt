@@ -23,11 +23,9 @@ sealed class AddLocationState {
 class LocationViewModel : ViewModel() {
     private val repository = LocationRepository()
 
-    // --- Add Location States ---
     private val _state = MutableStateFlow<AddLocationState>(AddLocationState.Idle)
     val state: StateFlow<AddLocationState> = _state
 
-    // --- Adres detectie ---
     private var detectedCityName: String = "Onbekend"
     private var detectedPostalCode: String = ""
 
@@ -101,7 +99,6 @@ class LocationViewModel : ViewModel() {
                     photoUrl = downloadUrl,
                     addedByUid = uid,
                     averageRating = ratingValue,
-                    // comments = commentText, // Let op: dit veld bestaat wss niet in Location, comment gaat in aparte collectie
                     address = _addressText.value
                 )
 

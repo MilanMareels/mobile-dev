@@ -12,11 +12,6 @@ import org.osmdroid.views.overlay.Marker
 // Importeer de Firebase GeoPoint
 import com.google.firebase.firestore.GeoPoint
 
-/**
- * Een Composable wrapper voor de osmdroid MapView.
- * @param modifier Modifier voor de layout.
- * @param geoPoint De Firebase GeoPoint die moet worden weergegeven.
- */
 @Composable
 fun OsmMapView(
     modifier: Modifier = Modifier,

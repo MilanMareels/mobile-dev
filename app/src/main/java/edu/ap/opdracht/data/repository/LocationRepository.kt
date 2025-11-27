@@ -6,14 +6,14 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.snapshots
-import edu.ap.opdracht.data.model.Location
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.tasks.await
 import com.google.firebase.storage.storage
 import edu.ap.opdracht.data.model.City
 import edu.ap.opdracht.data.model.Comment
+import edu.ap.opdracht.data.model.Location
 import edu.ap.opdracht.data.model.Rating
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
 class LocationRepository {
@@ -25,9 +25,21 @@ class LocationRepository {
     fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
     }
+
     fun getCurrentUserDisplayName(): String {
-        return auth.currentUser?.displayName ?: "Anonieme Gebruiker"
+        val user = auth.currentUser
+
+        if (!user?.displayName.isNullOrBlank()) {
+            return user.displayName!!
+        }
+
+        return user?.email
+            ?.substringBefore("@")
+            ?.substringBefore(".")
+            ?.replaceFirstChar { it.uppercase() }
+            ?: "Anoniem"
     }
+
     suspend fun uploadPhoto(imageUri: Uri): Result<String> {
         return try {
             val fileName = "locations/${UUID.randomUUID()}.jpg"
@@ -42,6 +54,59 @@ class LocationRepository {
             Result.failure(e)
         }
     }
+
+    fun getCommentsForLocation(locationId: String): Flow<List<Comment>> {
+        return db.collection("locations").document(locationId)
+            .collection("comments")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(5)
+            .snapshots()
+            .map { snapshot ->
+                snapshot.toObjects(Comment::class.java)
+            }
+    }
+
+    suspend fun addReview(locationId: String, ratingValue: Double, commentText: String): Result<Unit> {
+        return try {
+            val uid = getCurrentUserId() ?: return Result.failure(Exception("Niet ingelogd"))
+            val userName = getCurrentUserDisplayName()
+
+            val locationRef = db.collection("locations").document(locationId)
+            val ratingRef = locationRef.collection("ratings").document(uid) // 1 rating per user per locatie
+            val commentRef = locationRef.collection("comments").document()
+
+            val newRating = Rating(value = ratingValue, ratedByUid = uid)
+
+            val newComment = Comment(
+                text = commentText,
+                commentByUid = uid,
+                userDisplayName = userName
+            )
+
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(locationRef)
+
+
+                val currentAvg = snapshot.getDouble("averageRating") ?: 0.0
+                val currentCount = snapshot.getLong("totalRatings") ?: 0L
+
+                val newTotalRatings = currentCount + 1
+                val newAverage = ((currentAvg * currentCount) + ratingValue) / newTotalRatings
+
+                transaction.set(ratingRef, newRating)
+                transaction.set(commentRef, newComment)
+
+                transaction.update(locationRef, "averageRating", newAverage)
+                transaction.update(locationRef, "totalRatings", newTotalRatings)
+            }.await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
     suspend fun addLocationWithDetails(
         location: Location,
         rating: Rating,
@@ -61,7 +126,12 @@ class LocationRepository {
                 return Result.failure(Exception("Kon geen geldig City ID genereren"))
             }
 
-            val finalLocation = location.copy(cityId = finalCityId)
+            val finalLocation = location.copy(
+                cityId = finalCityId,
+                averageRating = rating.value,
+                totalRatings = 1,
+                originalRating = rating.value
+            )
 
             val batch = db.batch()
 
@@ -84,6 +154,7 @@ class LocationRepository {
         }
     }
 
+
     fun getCities(): Flow<List<City>> {
         return db.collection("cities")
             .orderBy("name", Query.Direction.ASCENDING)
@@ -92,6 +163,7 @@ class LocationRepository {
                 snapshot.toObjects(City::class.java)
             }
     }
+
     fun getAllLocations(category: String?, cityId: String?): Flow<List<Location>> {
         var query: Query = db.collection("locations")
 
@@ -145,6 +217,8 @@ class LocationRepository {
         }
     }
 
+
+
     private suspend fun getOrCreateCityId(cityName: String, postalCode: String): String {
         val safeName = if (cityName.isBlank()) "Onbekend" else cityName
         val safeZip = if (postalCode.isBlank()) "0000" else postalCode
@@ -157,21 +231,19 @@ class LocationRepository {
 
         if (!querySnapshot.isEmpty) {
             val existingId = querySnapshot.documents[0].id
-            println("DEBUG: Stad gevonden: $safeName met ID: $existingId")
             return existingId
         } else {
             val newCityRef = db.collection("cities").document()
 
-            val newCity = edu.ap.opdracht.data.model.City(
+            val newCity = City(
                 id = newCityRef.id,
                 name = safeName,
                 postalCode = safeZip
             )
 
             newCityRef.set(newCity).await()
-
-            println("DEBUG: Nieuwe stad gemaakt: $safeName met ID: ${newCityRef.id}")
             return newCityRef.id
         }
     }
+
 }

@@ -16,7 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,7 +53,7 @@ fun AddLocationScreen(
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var rating by remember { mutableStateOf(0f) }
     var comment by remember { mutableStateOf("") }
-    // State van de ViewModel
+
     val state by viewModel.state.collectAsState()
     val addressText by viewModel.addressText.collectAsState()
 
@@ -160,7 +160,6 @@ fun AddLocationScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Naam
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -251,9 +250,9 @@ fun StarRatingInput(
     ) {
         for (i in 1..maxRating) {
             Icon(
-                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
                 contentDescription = "Ster $i",
-                tint = Color(0xFFFFC107), // Goudkleur
+                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
                 modifier = Modifier
                     .size(40.dp)
                     .clickable {
@@ -312,9 +311,7 @@ private fun getCurrentLocation(context: Context, onLocationFetched: (GeoPoint) -
                 val geoPoint = GeoPoint(location.latitude, location.longitude)
                 onLocationFetched(geoPoint)
             } else {
-                // Soms is 'lastLocation' null, probeer een 'currentLocation'
-                // (Dit kun je later verfijnen als het nodig is)
-                // Voor nu is dit voldoende.
+
             }
         }
 }

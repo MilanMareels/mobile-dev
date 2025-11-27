@@ -231,7 +231,6 @@ fun PopularLocationsHeader(
             fontWeight = FontWeight.Bold
         )
         Row {
-            // Lijst knop
             Button(
                 onClick = { onToggle(false) },
                 modifier = Modifier.height(40.dp),
@@ -240,7 +239,6 @@ fun PopularLocationsHeader(
                 Text("Lijst", fontSize = 12.sp)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            // Kaart knop
             Button(
                 onClick = { onToggle(true) },
                 modifier = Modifier.height(40.dp),

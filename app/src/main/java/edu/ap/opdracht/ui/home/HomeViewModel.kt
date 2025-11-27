@@ -17,26 +17,21 @@ class HomeViewModel(
     private val locationRepository: LocationRepository = LocationRepository()
 ) : ViewModel() {
 
-    // --- Filters ---
     private val _selectedCategory = MutableStateFlow("Alles")
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
     private val _selectedCityId = MutableStateFlow<String?>("Alles")
     val selectedCityId: StateFlow<String?> = _selectedCityId.asStateFlow()
 
-    // --- View Mode (Lijst of Kaart) ---
     private val _isMapView = MutableStateFlow(false)
     val isMapView: StateFlow<Boolean> = _isMapView.asStateFlow()
 
-    // --- Data: Steden (voor chips) ---
     val cities: StateFlow<List<City>> = locationRepository.getCities().stateIn(
         scope = viewModelScope,
         started = SharingStarted.Lazily,
         initialValue = emptyList()
     )
 
-    // --- Data: Locaties (Gefilterd) ---
-    // Dit luistert naar BEIDE filters.
     val locations: StateFlow<List<Location>> = combine(
         _selectedCategory,
         _selectedCityId
@@ -50,7 +45,6 @@ class HomeViewModel(
         initialValue = emptyList()
     )
 
-    // --- Actions ---
     fun selectCategory(category: String) {
         _selectedCategory.value = category
     }

@@ -1,22 +1,28 @@
 package edu.ap.opdracht.ui.detail
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import edu.ap.opdracht.data.model.Comment
 import edu.ap.opdracht.data.model.Location
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,7 +31,8 @@ fun DetailScreen(
     detailViewModel: DetailViewModel = viewModel(),
     onBackClick: () -> Unit
 ) {
-    val uiState by detailViewModel.uiState.collectAsState()
+    val uiState by detailViewModel.uiState.collectAsStateWithLifecycle()
+    val comments by detailViewModel.comments.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -44,21 +51,51 @@ fun DetailScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-        }
-        else if (uiState.error != null) {
+        } else if (uiState.error != null) {
             Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
-                Text("Fout bij laden: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+                Text("Fout: ${uiState.error}", color = MaterialTheme.colorScheme.error)
             }
-        }
-        else {
+        } else {
+            val location = uiState.location!!
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 item {
-                    uiState.location?.let {
-                        LocationDetails(it)
+                    LocationDetails(location)
+                }
+
+                item {
+                    AddReviewSection(
+                        onSubmit = { rating, text ->
+                            detailViewModel.submitRating(rating, text)
+                        }
+                    )
+                }
+
+                item {
+                    Text(
+                        text = "Recente Reacties",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                    )
+                }
+
+                if (comments.isEmpty()) {
+                    item {
+                        Text(
+                            text = "Nog geen reacties.",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = Color.Gray
+                        )
+                    }
+                } else {
+                    items(comments) { comment ->
+                        CommentItem(comment)
                     }
                 }
             }
@@ -71,40 +108,38 @@ fun LocationDetails(location: Location) {
     Column(modifier = Modifier.fillMaxWidth()) {
         AsyncImage(
             model = location.photoUrl,
-            contentDescription = "Foto van ${location.name}",
+            contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
+            modifier = Modifier.fillMaxWidth().height(250.dp)
         )
 
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = location.name,
                     style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
 
-                // Rating weergave
                 Column(horizontalAlignment = Alignment.End) {
                     Row {
                         val rating = location.averageRating.toInt()
                         for (i in 1..5) {
                             Icon(
-                                imageVector = Icons.Default.Star,
+                                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
                                 contentDescription = null,
-                                tint = Color(0xFFFFC107),
+                                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                     Text(
-                        text = "${location.averageRating}/5",
+                        text = "${String.format("%.1f", location.averageRating)} (${location.totalRatings})",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -118,27 +153,99 @@ fun LocationDetails(location: Location) {
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = location.comments,
-                style = MaterialTheme.typography.bodyLarge
-            )
 
             location.location?.let { geoPoint ->
                 Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "Locatie op kaart",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Locatie op kaart", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OsmMapView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp),
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
                     geoPoint = geoPoint
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun AddReviewSection(onSubmit: (Double, String) -> Unit) {
+    var rating by remember { mutableIntStateOf(0) }
+    var comment by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Geef een rating",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Row(modifier = Modifier.padding(vertical = 8.dp)) {
+            for (i in 1..5) {
+                Icon(
+                    imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
+                    contentDescription = "$i Sterren",
+                    tint = if (i <= rating) Color(0xFFFFC107) else Color.LightGray,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { rating = i }
+                        .padding(4.dp)
+                )
+            }
+        }
+
+        OutlinedTextField(
+            value = comment,
+            onValueChange = { comment = it },
+            label = { Text("Schrijf een reactie...") },
+            modifier = Modifier.fillMaxWidth(),
+            maxLines = 3,
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (rating > 0) {
+                    onSubmit(rating.toDouble(), comment)
+                    rating = 0
+                    comment = ""
+                }
+            },
+            enabled = rating > 0,
+            modifier = Modifier.align(Alignment.End),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text("Plaats Review")
+        }
+    }
+}
+
+@Composable
+fun CommentItem(comment: Comment) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(24.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (comment.userDisplayName.isNotBlank()) comment.userDisplayName else "Anoniem",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(comment.text, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
