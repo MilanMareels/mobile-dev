@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -97,7 +96,7 @@ fun LocationDetails(location: Location) {
                         val rating = location.averageRating.toInt()
                         for (i in 1..5) {
                             Icon(
-                                imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.StarOutline,
+                                imageVector = Icons.Default.Star,
                                 contentDescription = null,
                                 tint = Color(0xFFFFC107),
                                 modifier = Modifier.size(20.dp)
