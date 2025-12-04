@@ -110,15 +110,6 @@ fun ProfileScreen(
                     onClick = onMyLocationsClick
                 )
 
-                ProfileMenuItem(
-                    icon = Icons.Outlined.FavoriteBorder,
-                    iconTint = Color(0xFFBD10E0),
-                    iconBgColor = Color(0xFFBD10E0).copy(alpha = 0.1f),
-                    title = "Favorieten",
-                    subtitle = "Je opgeslagen locaties",
-                    onClick = { /* TODO: Navigeer naar Favorieten */ }
-                )
-
                 Spacer(modifier = Modifier.weight(1f))
 
                 Button(
