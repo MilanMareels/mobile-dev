@@ -161,7 +161,9 @@ fun LocationDetails(location: Location) {
 
                 OsmMapView(
                     modifier = Modifier.fillMaxWidth().height(200.dp),
-                    geoPoint = geoPoint
+                    geoPoint = geoPoint,
+                    title = location.name,
+                    subtitle = location.category
                 )
             }
         }

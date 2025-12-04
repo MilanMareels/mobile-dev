@@ -32,12 +32,17 @@ fun HomeScreen(
     onLocationClick: (locationId: String) -> Unit,
     onAddLocationClick: () -> Unit = {}
 ) {
-    // Haal alle states op van de HomeViewModel
     val locations by homeViewModel.locations.collectAsStateWithLifecycle()
     val selectedCategory by homeViewModel.selectedCategory.collectAsStateWithLifecycle()
     val cities by homeViewModel.cities.collectAsStateWithLifecycle()
     val selectedCityId by homeViewModel.selectedCityId.collectAsStateWithLifecycle()
     val isMapView by homeViewModel.isMapView.collectAsStateWithLifecycle()
+
+    val currentCityName = if (selectedCityId == "Alles" || selectedCityId == null) {
+        "Antwerpen"
+    } else {
+        cities.find { it.id == selectedCityId }?.name ?: "Antwerpen"
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -45,8 +50,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header en Filters (Vast bovenaan)
-            Header()
+            Header(currentCityName)
 
             CityChips(
                 cities = cities,
@@ -68,7 +72,6 @@ fun HomeScreen(
                 onToggle = { showMap -> homeViewModel.toggleViewMode(showMap) }
             )
 
-            // Content (Kaart of Lijst)
             Box(modifier = Modifier.fillMaxSize()) {
                 if (isMapView) {
                     Column(
@@ -78,7 +81,7 @@ fun HomeScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f) // Laat de kaart de rest van de ruimte vullen
+                                .weight(1f)
                                 .padding(16.dp),
                             shape = RoundedCornerShape(16.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -129,14 +132,14 @@ fun HomeScreen(
 }
 
 @Composable
-fun Header() {
+fun Header(cityName: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "Welkom in Antwerpen",
+            text = "Welkom in $cityName",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
