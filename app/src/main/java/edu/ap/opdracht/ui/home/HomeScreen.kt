@@ -72,7 +72,6 @@ fun HomeScreen(
                 onToggle = { showMap -> homeViewModel.toggleViewMode(showMap) }
             )
 
-            // Content (Kaart of Lijst)
             Box(modifier = Modifier.fillMaxSize()) {
                 if (isMapView) {
                     Column(
@@ -82,7 +81,7 @@ fun HomeScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f) // Laat de kaart de rest van de ruimte vullen
+                                .weight(1f)
                                 .padding(16.dp),
                             shape = RoundedCornerShape(16.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
