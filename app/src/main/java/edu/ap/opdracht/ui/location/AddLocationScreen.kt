@@ -26,17 +26,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider // Belangrijke import
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.firestore.GeoPoint
-import kotlinx.coroutines.launch
+import java.io.File
 
 val galleryPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
     Manifest.permission.READ_MEDIA_IMAGES
 } else {
     Manifest.permission.READ_EXTERNAL_STORAGE
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLocationScreen(
@@ -44,7 +46,6 @@ fun AddLocationScreen(
     viewModel: LocationViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Horeca") }
@@ -53,6 +54,8 @@ fun AddLocationScreen(
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var rating by remember { mutableStateOf(0f) }
     var comment by remember { mutableStateOf("") }
+
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     val state by viewModel.state.collectAsState()
     val addressText by viewModel.addressText.collectAsState()
@@ -71,29 +74,59 @@ fun AddLocationScreen(
         }
     }
 
+
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        imageUri = uri
+        if (uri != null) imageUri = uri
     }
 
     val galleryPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            galleryLauncher.launch("image/*")
-        } else {
-            Toast.makeText(context, "Galerij permissie geweigerd", Toast.LENGTH_SHORT).show()
+        if (isGranted) galleryLauncher.launch("image/*")
+        else Toast.makeText(context, "Galerij permissie geweigerd", Toast.LENGTH_SHORT).show()
+    }
+
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempCameraUri != null) {
+            imageUri = tempCameraUri
         }
     }
 
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val uri = createTempImageUri(context)
+            tempCameraUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Toast.makeText(context, "Camera permissie geweigerd", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
     fun openGallery() {
         when (ContextCompat.checkSelfPermission(context, galleryPermission)) {
+            PackageManager.PERMISSION_GRANTED -> galleryLauncher.launch("image/*")
+            else -> galleryPermissionLauncher.launch(galleryPermission)
+        }
+    }
+
+    fun openCamera() {
+        val permission = Manifest.permission.CAMERA
+        when (ContextCompat.checkSelfPermission(context, permission)) {
             PackageManager.PERMISSION_GRANTED -> {
-                galleryLauncher.launch("image/*")
+                val uri = createTempImageUri(context)
+                tempCameraUri = uri
+                cameraLauncher.launch(uri)
             }
             else -> {
-                galleryPermissionLauncher.launch(galleryPermission)
+                cameraPermissionLauncher.launch(permission)
             }
         }
     }
@@ -107,15 +140,15 @@ fun AddLocationScreen(
                     viewModel.onLocationFetched(context, geoPoint)
                 }
             }
-            else -> {
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
+            else -> locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
+
 
     LaunchedEffect(Unit) {
         fetchLocation()
     }
+
 
     LaunchedEffect(state) {
         when (val s = state) {
@@ -143,9 +176,24 @@ fun AddLocationScreen(
         Text("Nieuwe Locatie", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
 
-        Button(onClick = { openGallery() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Kies Foto")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(
+                onClick = { openGallery() },
+                modifier = Modifier.weight(1f).padding(end = 8.dp)
+            ) {
+                Text("Kies Foto")
+            }
+            Button(
+                onClick = { openCamera() },
+                modifier = Modifier.weight(1f).padding(start = 8.dp)
+            ) {
+                Text("Maak Foto")
+            }
         }
+
         if (imageUri != null) {
             Spacer(Modifier.height(16.dp))
             AsyncImage(
@@ -197,7 +245,7 @@ fun AddLocationScreen(
                 Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = addressText, // Dit is nu bv. "Atomiumsquare 1, 1020 Brussel"
+                    text = addressText,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -236,6 +284,24 @@ fun AddLocationScreen(
     }
 }
 
+
+fun createTempImageUri(context: Context): Uri {
+    val tempFile = File.createTempFile(
+        "picture_${System.currentTimeMillis()}",
+        ".jpg",
+        context.externalCacheDir
+    ).apply {
+        createNewFile()
+        deleteOnExit()
+    }
+
+    return FileProvider.getUriForFile(
+        context,
+        "edu.ap.opdracht.provider",
+        tempFile
+    )
+}
+
 @Composable
 fun StarRatingInput(
     rating: Float,
@@ -255,9 +321,7 @@ fun StarRatingInput(
                 tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
                 modifier = Modifier
                     .size(40.dp)
-                    .clickable {
-                        onRatingChange(i.toFloat())
-                    }
+                    .clickable { onRatingChange(i.toFloat()) }
                     .padding(4.dp)
             )
         }
@@ -280,9 +344,7 @@ fun CategoryDropdown(selectedCategory: String, onCategorySelected: (String) -> U
             readOnly = true,
             label = { Text("Categorie") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth()
+            modifier = Modifier.menuAnchor().fillMaxWidth()
         )
         ExposedDropdownMenu(
             expanded = expanded,
@@ -304,14 +366,9 @@ fun CategoryDropdown(selectedCategory: String, onCategorySelected: (String) -> U
 @SuppressLint("MissingPermission")
 private fun getCurrentLocation(context: Context, onLocationFetched: (GeoPoint) -> Unit) {
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-
-    fusedLocationClient.lastLocation
-        .addOnSuccessListener { location ->
-            if (location != null) {
-                val geoPoint = GeoPoint(location.latitude, location.longitude)
-                onLocationFetched(geoPoint)
-            } else {
-
-            }
+    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+        if (location != null) {
+            onLocationFetched(GeoPoint(location.latitude, location.longitude))
         }
+    }
 }
